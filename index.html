@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f7f7f2" />
+    <title>每日状态记录</title>
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css?v=20260711-meal-texts-v2" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Daily Body Log</p>
+          <h1>每日状态记录</h1>
+        </div>
+        <div class="today-pill" id="todayPill"></div>
+      </header>
+
+      <main>
+        <nav class="tabs" aria-label="主导航">
+          <button class="tab is-active" type="button" data-tab="today">今日</button>
+          <button class="tab" type="button" data-tab="history">历史</button>
+          <button class="tab" type="button" data-tab="report">报告</button>
+        </nav>
+
+        <section class="panel metrics-grid" aria-label="近期概览">
+          <div class="metric">
+            <span>7日体重均值</span>
+            <strong id="weightAverage">--</strong>
+          </div>
+          <div class="metric">
+            <span>连续记录</span>
+            <strong id="streakCount">--</strong>
+          </div>
+          <div class="metric">
+            <span>本周训练</span>
+            <strong id="weekWorkouts">--</strong>
+          </div>
+        </section>
+
+        <section class="view is-active" id="view-today">
+          <form id="recordForm" class="record-form">
+            <section class="panel form-section">
+              <div class="section-head">
+                <h2>基础状态</h2>
+                <button class="secondary small" type="button" id="newTodayBtn">今天</button>
+              </div>
+              <div class="form-grid">
+                <label>
+                  <span>日期</span>
+                  <input id="date" name="date" type="date" required />
+                </label>
+                <label>
+                  <span>体重 kg</span>
+                  <input id="weight" name="weight" type="number" step="0.1" min="20" max="250" inputmode="decimal" placeholder="64.8" />
+                </label>
+                <label>
+                  <span>睡眠 h</span>
+                  <input id="sleepHours" name="sleepHours" type="number" step="0.1" min="0" max="16" inputmode="decimal" placeholder="7.5" />
+                </label>
+                <label>
+                  <span>今日状态</span>
+                  <select id="dailyStatus" name="dailyStatus">
+                    <option value="">未记录</option>
+                    <option value="很差">很差</option>
+                    <option value="一般">一般</option>
+                    <option value="不错">不错</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="slider-row fixed-row">
+                <label for="sleepQuality">睡眠质量</label>
+                <input id="sleepQuality" name="sleepQuality" type="range" min="1" max="10" value="5" />
+                <output id="sleepQualityValue">5</output>
+              </div>
+            </section>
+
+            <section class="panel form-section">
+              <h2>饮食</h2>
+              <div class="meal-grid">
+                <label>
+                  <span>午餐吃了什么</span>
+                  <textarea id="lunchText" name="lunchText" rows="4" placeholder="一碗米饭、鱼香茄子、炒河虾"></textarea>
+                </label>
+                <label class="meal-source">
+                  <span>午餐来源</span>
+                  <select id="lunchSource" name="lunchSource">
+                    <option value="">未记录</option>
+                    <option value="外卖">外卖</option>
+                    <option value="外食">外食</option>
+                    <option value="家常">家常</option>
+                  </select>
+                </label>
+                <label>
+                  <span>晚餐吃了什么</span>
+                  <textarea id="dinnerText" name="dinnerText" rows="4" placeholder="寿司、400ml啤酒"></textarea>
+                </label>
+                <label class="meal-source">
+                  <span>晚餐来源</span>
+                  <select id="dinnerSource" name="dinnerSource">
+                    <option value="">未记录</option>
+                    <option value="外卖">外卖</option>
+                    <option value="外食">外食</option>
+                    <option value="家常">家常</option>
+                  </select>
+                </label>
+                <label>
+                  <span>宵夜吃了什么</span>
+                  <textarea id="lateNightText" name="lateNightText" rows="4" placeholder="蛋白棒、酸奶"></textarea>
+                </label>
+                <label class="meal-source">
+                  <span>宵夜来源</span>
+                  <select id="lateNightSource" name="lateNightSource">
+                    <option value="">未记录</option>
+                    <option value="外卖">外卖</option>
+                    <option value="外食">外食</option>
+                    <option value="家常">家常</option>
+                  </select>
+                </label>
+              </div>
+              <div class="tag-group" aria-label="饮食标签">
+                <label><input type="checkbox" name="dietTags" value="高盐" />高盐</label>
+                <label><input type="checkbox" name="dietTags" value="饮酒" />饮酒</label>
+                <label><input type="checkbox" name="dietTags" value="清淡" />清淡</label>
+                <label><input type="checkbox" name="dietTags" value="偏多" />偏多</label>
+                <label><input type="checkbox" name="dietTags" value="偏少" />偏少</label>
+              </div>
+              <div class="estimate-box" id="nutritionEstimate"></div>
+            </section>
+
+            <section class="panel form-section">
+              <h2>训练</h2>
+              <label>
+                <span>今天练了什么</span>
+                <textarea id="workoutText" name="workoutText" rows="7" placeholder="Push&#10;Smith Shoulder Press&#10;60x8&#10;60x8&#10;60x7&#10;Lateral Raise&#10;12x15&#10;12x15"></textarea>
+              </label>
+              <div class="estimate-box" id="workoutEstimate"></div>
+            </section>
+
+            <section class="panel form-section">
+              <h2>活动与反馈</h2>
+              <div class="form-grid">
+                <label>
+                  <span>步数</span>
+                  <input id="steps" name="steps" type="number" step="1" min="0" inputmode="numeric" placeholder="8500" />
+                </label>
+                <label>
+                  <span>有氧</span>
+                  <input id="cardioText" name="cardioText" type="text" placeholder="跑步20min" />
+                </label>
+              </div>
+              <label>
+                <span>疼痛或身体反馈</span>
+                <textarea id="feedbackText" name="feedbackText" rows="4" placeholder="右手腕2/10，脸有点水肿，恢复不错"></textarea>
+              </label>
+              <div class="tag-group" aria-label="身体标签">
+                <label><input type="checkbox" name="bodyTags" value="水肿" />水肿</label>
+                <label><input type="checkbox" name="bodyTags" value="便秘" />便秘</label>
+                <label><input type="checkbox" name="bodyTags" value="酸痛" />酸痛</label>
+                <label><input type="checkbox" name="bodyTags" value="疲劳" />疲劳</label>
+              </div>
+            </section>
+
+            <section class="panel form-section">
+              <h2>快速评分</h2>
+              <div class="optional-score" data-score="hunger">
+                <div class="score-head">
+                  <label>饥饿感</label>
+                  <output>未记录</output>
+                </div>
+                <input type="range" min="1" max="10" value="5" />
+                <button class="link-button" type="button">清空</button>
+              </div>
+              <div class="optional-score" data-score="stress">
+                <div class="score-head">
+                  <label>压力</label>
+                  <output>未记录</output>
+                </div>
+                <input type="range" min="1" max="10" value="5" />
+                <button class="link-button" type="button">清空</button>
+              </div>
+              <div class="optional-score" data-score="trainingRpe">
+                <div class="score-head">
+                  <label>训练强度 RPE</label>
+                  <output>未记录</output>
+                </div>
+                <input type="range" min="1" max="10" value="5" />
+                <button class="link-button" type="button">清空</button>
+              </div>
+            </section>
+
+            <section class="panel form-section">
+              <h2>备注</h2>
+              <label>
+                <span>特殊情况</span>
+                <textarea id="noteText" name="noteText" rows="4" placeholder="今天吃得比较咸。晚上喝了酒。训练感觉很好。"></textarea>
+              </label>
+            </section>
+
+            <div class="bottom-actions">
+              <button class="primary" type="submit">保存记录</button>
+              <button class="secondary" type="button" id="copyTodayBtn">复制今日摘要</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="view" id="view-history">
+          <section class="panel">
+            <div class="section-head">
+              <h2>历史记录</h2>
+              <button class="secondary small" type="button" id="exportBtn">导出备份</button>
+            </div>
+            <div class="history-list" id="historyList"></div>
+            <label class="import-row">
+              <span>导入备份 JSON</span>
+              <input type="file" id="importFile" accept="application/json" />
+            </label>
+          </section>
+        </section>
+
+        <section class="view" id="view-report">
+          <section class="panel form-section">
+            <h2>生成报告</h2>
+            <div class="form-grid">
+              <label>
+                <span>周期</span>
+                <select id="reportType">
+                  <option value="weekly">周报</option>
+                  <option value="biweekly">双周报</option>
+                  <option value="monthly">月报</option>
+                </select>
+              </label>
+              <label>
+                <span>截止日期</span>
+                <input id="reportEndDate" type="date" />
+              </label>
+            </div>
+            <div class="bottom-actions inline-actions">
+              <button class="primary" type="button" id="generateReportBtn">生成</button>
+              <button class="secondary" type="button" id="copyReportBtn">复制报告</button>
+            </div>
+            <textarea id="reportOutput" class="report-output" rows="22" spellcheck="false"></textarea>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="./core.js?v=20260711-meal-texts-v2"></script>
+    <script src="./app.js?v=20260711-meal-texts-v2"></script>
+  </body>
+</html>
