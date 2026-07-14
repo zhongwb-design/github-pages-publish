@@ -11,6 +11,9 @@
     records: [],
     activeTab: "today",
     toastTimer: null,
+    historyMonth: `${core.todayISO().slice(0, 7)}-01`,
+    historyFilterDate: null,
+    copiedRecord: null,
   };
 
   function loadRecords() {
@@ -118,7 +121,6 @@
       noteText: $("#noteText").value.trim(),
       dietTags: collectChecked("dietTags"),
       bodyTags: collectChecked("bodyTags"),
-      hunger: getOptionalScore("hunger"),
       stress: getOptionalScore("stress"),
       trainingRpe: getOptionalScore("trainingRpe"),
     });
@@ -145,7 +147,6 @@
     $("#noteText").value = normalized.noteText;
     setChecked("dietTags", normalized.dietTags);
     setChecked("bodyTags", normalized.bodyTags);
-    setOptionalScore("hunger", normalized.hunger);
     setOptionalScore("stress", normalized.stress);
     setOptionalScore("trainingRpe", normalized.trainingRpe);
     updateLiveEstimates();
@@ -185,11 +186,72 @@
       : "输入训练后自动解析动作、组数和容量。";
   }
 
+  function addMonths(monthDate, amount) {
+    const [year, month] = monthDate.split("-").map(Number);
+    const next = new Date(year, month - 1 + amount, 1);
+    return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-01`;
+  }
+
+  function renderCalendar() {
+    const [year, month] = state.historyMonth.split("-").map(Number);
+    const firstWeekday = (new Date(year, month - 1, 1).getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const recordDates = new Set(state.records.map((record) => record.date));
+    const today = core.todayISO();
+    const cells = Array.from({ length: firstWeekday }, () => `<span class="calendar-blank" aria-hidden="true"></span>`);
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const hasRecord = recordDates.has(date);
+      const classes = [
+        "calendar-day",
+        hasRecord ? "has-record" : "",
+        date === today ? "is-today" : "",
+        date === state.historyFilterDate ? "is-selected" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      cells.push(
+        `<button class="${classes}" type="button" data-calendar-date="${date}" aria-label="${core.formatDateCn(date)}${hasRecord ? "，有记录" : "，无记录"}"><span>${day}</span>${hasRecord ? '<i aria-hidden="true"></i>' : ""}</button>`
+      );
+    }
+
+    $("#calendarTitle").textContent = `${year}年${month}月`;
+    $("#calendarGrid").innerHTML = cells.join("");
+  }
+
+  function renderRecordCopyBar() {
+    const bar = $("#recordCopyBar");
+    if (!state.copiedRecord) {
+      bar.hidden = true;
+      return;
+    }
+    bar.hidden = false;
+    const isSourceDate = state.historyFilterDate === state.copiedRecord.date;
+    const targetText = isSourceDate
+      ? "，请选择另外一天"
+      : state.historyFilterDate
+        ? `，目标 ${core.formatDateCn(state.historyFilterDate)}`
+        : "，请在日历中选择目标日期";
+    $("#copiedRecordLabel").textContent = `已复制 ${core.formatDateCn(state.copiedRecord.date)} 的完整记录${targetText}`;
+    $("#pasteRecordBtn").disabled = !state.historyFilterDate || isSourceDate;
+  }
+
   function renderHistory() {
+    renderCalendar();
+    renderRecordCopyBar();
     const list = $("#historyList");
-    const records = core.sortRecords(state.records).reverse();
+    const allRecords = core.sortRecords(state.records).reverse();
+    const records = state.historyFilterDate
+      ? allRecords.filter((record) => record.date === state.historyFilterDate)
+      : allRecords;
+    $("#historyFilterSummary").textContent = state.historyFilterDate
+      ? `${core.formatDateCn(state.historyFilterDate)} · ${records.length ? "有记录" : "无记录"}`
+      : `全部记录 · ${allRecords.length}天`;
     if (!records.length) {
-      list.innerHTML = `<div class="empty-state">暂无记录</div>`;
+      list.innerHTML = state.historyFilterDate
+        ? `<div class="empty-state">当天暂无记录<br /><button class="secondary small" type="button" data-create="${state.historyFilterDate}">新增这一天的记录</button></div>`
+        : `<div class="empty-state">暂无记录</div>`;
       return;
     }
     list.innerHTML = records
@@ -214,6 +276,7 @@
               </div>
               <div class="history-actions">
                 <button class="secondary small" type="button" data-edit="${record.date}">编辑</button>
+                <button class="secondary small" type="button" data-copy="${record.date}">复制</button>
                 <button class="secondary small danger" type="button" data-delete="${record.date}">删除</button>
               </div>
             </div>
@@ -222,6 +285,31 @@
         `;
       })
       .join("");
+  }
+
+  function copyHistoryRecord(date) {
+    const record = recordForDate(date);
+    if (!record) return;
+    state.copiedRecord = core.copyRecordToDate(record, date);
+    state.historyFilterDate = null;
+    renderHistory();
+    showToast("完整记录已复制，请选择目标日期");
+  }
+
+  function pasteHistoryRecord() {
+    if (!state.copiedRecord || !state.historyFilterDate) return;
+    const targetDate = state.historyFilterDate;
+    if (targetDate === state.copiedRecord.date) {
+      showToast("请选择另外一天作为目标日期");
+      return;
+    }
+    if (recordForDate(targetDate) && !confirm(`${core.formatDateCn(targetDate)} 已有记录，是否覆盖？`)) return;
+
+    upsertRecord(core.copyRecordToDate(state.copiedRecord, targetDate));
+    state.copiedRecord = null;
+    updateMetrics();
+    renderHistory();
+    showToast("完整记录已粘贴");
   }
 
   function escapeHtml(value) {
@@ -345,7 +433,9 @@
 
     $("#historyList").addEventListener("click", (event) => {
       const editDate = event.target.dataset.edit;
+      const copyDate = event.target.dataset.copy;
       const deleteDate = event.target.dataset.delete;
+      const createDate = event.target.dataset.create;
       if (editDate) {
         const record = recordForDate(editDate);
         if (record) {
@@ -353,12 +443,43 @@
           setTab("today");
         }
       }
+      if (copyDate) copyHistoryRecord(copyDate);
+      if (createDate) {
+        fillForm({ date: createDate, sleepQuality: 5 });
+        setTab("today");
+      }
       if (deleteDate && confirm(`删除 ${core.formatDateCn(deleteDate)} 的记录？`)) {
         deleteRecord(deleteDate);
         updateMetrics();
         renderHistory();
         showToast("已删除");
       }
+    });
+
+    $("#calendarGrid").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-calendar-date]");
+      if (!button) return;
+      state.historyFilterDate = button.dataset.calendarDate;
+      renderHistory();
+    });
+    $("#previousMonthBtn").addEventListener("click", () => {
+      state.historyMonth = addMonths(state.historyMonth, -1);
+      state.historyFilterDate = null;
+      renderHistory();
+    });
+    $("#nextMonthBtn").addEventListener("click", () => {
+      state.historyMonth = addMonths(state.historyMonth, 1);
+      state.historyFilterDate = null;
+      renderHistory();
+    });
+    $("#showAllHistoryBtn").addEventListener("click", () => {
+      state.historyFilterDate = null;
+      renderHistory();
+    });
+    $("#pasteRecordBtn").addEventListener("click", pasteHistoryRecord);
+    $("#cancelCopyBtn").addEventListener("click", () => {
+      state.copiedRecord = null;
+      renderHistory();
     });
 
     $("#generateReportBtn").addEventListener("click", generateReport);

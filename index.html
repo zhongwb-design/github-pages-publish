@@ -7,7 +7,7 @@
     <title>每日状态记录</title>
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260711-meal-texts-v2" />
+    <link rel="stylesheet" href="./styles.css?v=20260714-history-calendar-v1" />
   </head>
   <body>
     <div class="app-shell">
@@ -162,19 +162,12 @@
                 <label><input type="checkbox" name="bodyTags" value="便秘" />便秘</label>
                 <label><input type="checkbox" name="bodyTags" value="酸痛" />酸痛</label>
                 <label><input type="checkbox" name="bodyTags" value="疲劳" />疲劳</label>
+                <label><input type="checkbox" name="bodyTags" value="手腕疼痛或不适" />手腕疼痛或不适</label>
               </div>
             </section>
 
             <section class="panel form-section">
               <h2>快速评分</h2>
-              <div class="optional-score" data-score="hunger">
-                <div class="score-head">
-                  <label>饥饿感</label>
-                  <output>未记录</output>
-                </div>
-                <input type="range" min="1" max="10" value="5" />
-                <button class="link-button" type="button">清空</button>
-              </div>
               <div class="optional-score" data-score="stress">
                 <div class="score-head">
                   <label>压力</label>
@@ -214,6 +207,24 @@
               <h2>历史记录</h2>
               <button class="secondary small" type="button" id="exportBtn">导出备份</button>
             </div>
+            <section class="history-calendar" aria-label="记录日历">
+              <div class="calendar-toolbar">
+                <button class="calendar-nav" type="button" id="previousMonthBtn" aria-label="上个月" title="上个月">‹</button>
+                <strong id="calendarTitle"></strong>
+                <button class="calendar-nav" type="button" id="nextMonthBtn" aria-label="下个月" title="下个月">›</button>
+                <button class="secondary small" type="button" id="showAllHistoryBtn">显示全部</button>
+              </div>
+              <div class="calendar-weekdays" aria-hidden="true">
+                <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+              </div>
+              <div class="calendar-grid" id="calendarGrid"></div>
+            </section>
+            <div class="record-copy-bar" id="recordCopyBar" hidden>
+              <span id="copiedRecordLabel"></span>
+              <button class="primary small" type="button" id="pasteRecordBtn">粘贴到选中日期</button>
+              <button class="icon-button" type="button" id="cancelCopyBtn" aria-label="取消复制" title="取消复制">×</button>
+            </div>
+            <div class="history-filter-summary" id="historyFilterSummary"></div>
             <div class="history-list" id="historyList"></div>
             <label class="import-row">
               <span>导入备份 JSON</span>
@@ -251,7 +262,7 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./core.js?v=20260711-meal-texts-v2"></script>
-    <script src="./app.js?v=20260711-meal-texts-v2"></script>
+    <script src="./core.js?v=20260714-history-calendar-v1"></script>
+    <script src="./app.js?v=20260714-history-calendar-v1"></script>
   </body>
 </html>

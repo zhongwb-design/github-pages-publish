@@ -1,10 +1,10 @@
-const CACHE_NAME = "body-log-v1-20260711-backup-pwa";
+const CACHE_NAME = "body-log-v1-20260714-history-calendar-v1";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=20260711-meal-texts-v2",
-  "./core.js?v=20260711-meal-texts-v2",
-  "./app.js?v=20260711-meal-texts-v2",
+  "./styles.css?v=20260714-history-calendar-v1",
+  "./core.js?v=20260714-history-calendar-v1",
+  "./app.js?v=20260714-history-calendar-v1",
   "./icon.svg",
   "./manifest.webmanifest",
 ];

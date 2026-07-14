@@ -362,6 +362,23 @@
     return records.map(normalizeRecord).sort((a, b) => a.date.localeCompare(b.date));
   }
 
+  function copyRecordToDate(record, targetDate) {
+    const copied = normalizeRecord({
+      ...record,
+      date: targetDate,
+      hunger: null,
+      createdAt: "",
+      updatedAt: "",
+    });
+    return {
+      ...copied,
+      dietTags: [...copied.dietTags],
+      bodyTags: [...copied.bodyTags],
+      mealTexts: { ...copied.mealTexts },
+      mealSources: { ...copied.mealSources },
+    };
+  }
+
   function recordsInRange(records, startDate, endDate) {
     return sortRecords(records).filter((record) => record.date >= startDate && record.date <= endDate);
   }
@@ -410,7 +427,6 @@
       weightAverage: average(rangeRecords.map((record) => record.weight), 2),
       sleepAverage: average(rangeRecords.map((record) => record.sleepHours), 1),
       sleepQualityAverage: average(rangeRecords.map((record) => record.sleepQuality), 1),
-      hungerAverage: average(rangeRecords.map((record) => record.hunger), 1),
       stressAverage: average(rangeRecords.map((record) => record.stress), 1),
       trainingRpeAverage: average(rangeRecords.map((record) => record.trainingRpe), 1),
       stepsAverage: Math.round(average(rangeRecords.map((record) => record.steps), 0) || 0) || null,
@@ -517,7 +533,6 @@
       `- 平均睡眠：${valueOrDash(summary.sleepAverage, "h")}`,
       `- 睡眠质量：${valueOrDash(summary.sleepQualityAverage, "/10")}`,
       `- 今日状态分布：${formatCountMap(summary.statusCounts)}`,
-      `- 饥饿感：${valueOrDash(summary.hungerAverage, "/10")}`,
       `- 压力：${valueOrDash(summary.stressAverage, "/10")}`,
       "",
       "饮食原文",
@@ -585,6 +600,7 @@
     composeDietText,
     formatMealSources,
     normalizeRecord,
+    copyRecordToDate,
     sortRecords,
     recordsInRange,
     rollingWeightAverage,
